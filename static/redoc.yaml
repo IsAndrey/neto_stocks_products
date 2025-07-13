@@ -1,0 +1,394 @@
+openapi: 3.0.2
+info: 
+  title: 'Netology Stocks@Products API'
+  version: ''
+  description: |
+    запросы к API начинаются с `/api/v1/`
+    # Описание
+    Проект **Stocks@Products** реализует API для складов с продукцией.
+  license:
+    name: MIT
+    url: 'https://opensource.org/license/mit/'
+servers:
+  - url: /api/v1
+
+tags:
+  - name: PRODUCTS
+    description: Добавление, обновление, удаление и вывод списка продуктов 
+  - name: STOCKS
+    description: Добавление обновление и вывод складов с продуктами
+
+paths:
+  /products:
+    get:
+      security: []
+      tags:
+        - PRODUCTS
+      operationId: get_products_list
+      summary: Получить список продуктов
+      description: |
+        Получение списка продуктов
+        с возможностью поиска по
+        наименованию.
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: 'поиск по наименованию продукта'
+          schema:
+            type: string
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductRead'
+          description: 'Удачное выполнение запроса'
+        404:
+          description: 'Продукт не найден'
+    post:
+      security: []
+      tags:
+        - PRODUCTS
+      operationId: create_product
+      summary: Добавить продукт
+      description: |
+        Добавление продукта.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductRead'
+          description: 'Продукт добавлен'
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: 'Ошибка валидации'
+
+  /products/{id}:
+    get:
+      security: []
+      tags:
+        - PRODUCTS
+      operationId: get_product
+      summary: Получить продукт
+      description: |
+        Получение информации по продукту.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 'ID продукта'
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductRead'
+          description: 'Удачное выполнение запроса'
+        404:
+          description: 'Продукт не найден'
+    patch:
+      security: []
+      tags:
+        - PRODUCTS
+      operationId: update_product
+      summary: Обновить продукт
+      description: |
+        Обновление продукта,
+        обновляется поле description.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 'ID продукта'
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductRead'
+          description: 'Удачное выполнение запроса'
+        404:
+          description: 'Продукт не найден'
+    delete:
+      security: []
+      tags:
+        - PRODUCTS
+      operationId: delete_product
+      summary: Удалить продукт
+      description: |
+        Удаление продукта и остатков по складам.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 'ID продукта'
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductRead'
+          description: 'Удачное выполнение запроса'
+        404:
+          description: 'Продукт не найден'
+
+  /stocks:
+    get:
+      security: []
+      tags:
+        - STOCKS
+      operationId: get_stocks_list
+      summary: Вывести список складов
+      description: |
+        Вывод списка складов с
+        возможность поиска по id 
+        или наименованию продукта.
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: 'поиск по наименованию продукта'
+          schema:
+            type: string
+        - name: id
+          in: query
+          required: false
+          description: 'поиск по ID продукта'
+          schema:
+            type: integer
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockRead'
+          description: 'Удачное выполнение запроса'
+        404:
+          description: 'Склад не найден'
+    post:
+      security: []
+      tags:
+        - STOCKS
+      operationId: create_stock
+      summary: Создать склад
+      description: |
+        Добавление склада
+        со списком продуктов
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Stock'
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockRead'
+          description: 'Удачное выполнение запроса'
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: 'Ошибка валидации'
+
+  /stocks/{id}:
+    patch:
+      security: []
+      tags:
+        - STOCKS
+      operationId: update_stock
+      summary: Обновить склад
+      description: |
+        Обновление склада
+        со списком продуктов,
+        продукты отсутствующие в списке,
+        не удаляются.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 'ID склада'
+          schema:
+            type: integer      
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockUpdate'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockRead'
+          description: 'Удачное выполнение запроса'
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: 'Ошибка валидации'
+        404:
+          description: 'Склад не найден'
+    delete:
+      security: []
+      tags:
+        - STOCKS
+      operationId: delete_stock
+      summary: Удалить склад
+      description: |
+        Удаление склада,
+        возвращает информацию
+        об удаленном складе.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 'ID склада'
+          schema:
+            type: integer      
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockRead'
+          description: 'Удачное выполнение запроса'
+        404:
+          description: 'Склад не найден'
+components:
+  schemas:
+
+    Product:
+      title: Объект
+      type: object
+      properties:
+        title:
+          type: string
+          example: 'помидор'
+          title: Наименование продукта
+          maxLength: 60
+        description:
+          type: string
+          example: 'Самые вкусные помидоры'
+          title: Описание продукта
+      required:
+        - title
+
+    ProductRead:
+      title: Объект для чтения
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          title: ID продукта
+        title:
+          type: string
+          example: 'помидор'
+          title: Наименование продукта
+        description:
+          type: string
+          example: 'Самые вкусные помидоры'
+          title: Описание продукта
+
+    ProductUpdate:
+      title: Объект для обновления
+      type: object
+      properties:
+        description:
+          type: string
+          example: 'Самые вкусные помидоры'
+          title: Описание продукта
+
+    Stock:
+      title: Объект
+      type: object
+      properties:
+        address:
+          type: string
+          example: 'мой адрес не дом и не улица, мой адрес сегодня такой: www.ленинград-спб.ru3'
+          title: Адрес склада
+          maxLength: 300
+        products:
+          type: array
+          items:
+              $ref: '#/components/schemas/Position'
+      required:
+        - address
+
+    StockRead:
+      title: Объект для чтения
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          title: ID склада
+        address:
+          type: string
+          example: 'мой адрес не дом и не улица, мой адрес сегодня такой: www.ленинград-спб.ru3'
+          title: Адрес склада
+
+    StockUpdate:
+      title: Объект
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+              $ref: '#/components/schemas/Position'
+
+    Position:
+      title: Объект
+      type: object
+      properties:
+        product:
+          type: integer
+          example: 1
+          title: ID продукта
+        quantity:
+          type: integer
+          example: 1
+          minimum: 0
+        price:
+          type: number
+          example: 10.15
+      required:
+        - product
+
+    ValidationError:
+      title: Ошибка валидации
+      type: object
+      properties:
+        field_name:
+          type: array
+          items:
+            type: string
