@@ -1,5 +1,6 @@
 django
 djangorestframework
+django-filter
 psycopg2
 python-dotenv
 uritemplate
