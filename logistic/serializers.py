@@ -10,18 +10,34 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ReadProductPositionSerializer(serializers.ModelSerializer):
+    # настройте сериализатор для позиции продукта на складе
+    class Meta:
+        model = StockProduct
+        exclude = ['stock']
+
 class ProductPositionSerializer(serializers.ModelSerializer):
     # настройте сериализатор для позиции продукта на складе
     class Meta:
         model = StockProduct
         fields = '__all__'
-        write_only_fields = ['stock']
 
+class ReadStockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Stock
+        exclude = ['products']
 
 class StockSerializer(serializers.ModelSerializer):
-    positions = ProductPositionSerializer(many=True)
+    positions = ReadProductPositionSerializer(many=True, write_only=True)
 
     # настройте сериализатор для склада
+
+    def get_write_position_serializer(self, position, stock):
+        product = position.pop('product')
+        position['stock'], position['product'] = stock.id, product.id
+        serializer = ProductPositionSerializer(data=position)
+        serializer.is_valid()
+        return serializer
 
     def create(self, validated_data):
         # достаем связанные данные для других таблиц
@@ -35,10 +51,8 @@ class StockSerializer(serializers.ModelSerializer):
         # с помощью списка positions
 
         for position in positions:
-            position['stock'] = stock.id
-            serializer = ProductPositionSerializer(data=position)
-            if serializer.is_valid():
-                serializer.create(validated_data=serializer.validated_data)
+            serializer = self.get_write_position_serializer(position, stock)
+            serializer.create(validated_data=serializer.validated_data)
 
         return stock
 
@@ -54,22 +68,18 @@ class StockSerializer(serializers.ModelSerializer):
         # с помощью списка positions
 
         for position in positions:
-            position['stock'] = stock.id
-            serializer = ProductPositionSerializer(data=position)
-            if serializer.is_valid(raise_exception=True):
-                try:
-                    position_instance = StockProduct.objects.get(
-                        stock=serializer.validated_data['stock'],
-                        product=serializer.validated_data['product']
-                    )
-                    serializer.update(
-                        instance=position_instance,
-                        validated_data=serializer.validated_data
-                    )
-                except ObjectDoesNotExist:
-                    serializer.create(validated_data=serializer.validated_data)
+            serializer = self.get_write_position_serializer(position, stock)
+            try:
+                position_instance = StockProduct.objects.get(
+                    stock=position['stock'],
+                    product=position['product']
+                )
+                serializer.update(validated_data=serializer.validated_data, instance=position_instance)
+                
+            except ObjectDoesNotExist:
+                serializer.create(validated_data=serializer.validated_data)
         return stock
 
     class Meta:
         model = Stock
-        fields = '__all__'
+        exclude = ['products']
